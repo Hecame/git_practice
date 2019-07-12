@@ -1,0 +1,209 @@
+初次使用,需配置git
+    git config --global user.name 'username'
+    git config --global user.email 'username@example.com'
+    以上命令提供用户名及电子邮件地址,用于git跟踪项目改动者信息
+    加--global后的配置可在/~/.gitconfig中查看更改
+    如要在某个特定的项目中使用其他名字或电邮,去掉--global选项重新配置中,新的设定保存在当前项目的.git/config文件里.
+
+    git config --list   检查已有的配置信息
+    有时候会看到重复的变量名,那就说明它们来自不同的配置文件,不过最终Git实孙采用的是最后一个.
+
+    在仓库内建.gitignore文件,记录仓库内让Git忽略的文件.
+    git init        初始化仓库
+
+    git status      查看项目状态(修改/删除/新建)
+
+    git add file    将文件file加入到暂存区
+    git add .       将项目中未被跟踪的所有文件加入到暂存区
+
+
+    git commit -m '提交说明'    执行提交,-m让git记录提交说明
+    git commit -am  '说明'      执行提交,-a将仓库中所有修改了的文件加入当前提交(如有前后两次提交间,新建了文件需执行命令git add .以加入暂存区)
+
+    git log     查看提交历史
+    git log --pretty=oneline --abbrev-commit --graph
+    --pretty=oneline仅显示提交的引用ID及提交记录说明
+    --abbrev-commit仅显示引用ID的前7位数
+    --graph可看到分支合并图
+
+    git checkout --file 撤销对file的修改(在git add file前)
+    (--符号不可少,否则为切换分支功能)
+    git checkout .  放弃自最后一次提交后所做的所有修改
+
+    若要撤销的修改已写入暂存区,
+    git reset HEAD file		将暂存区内file放回工作区
+    (git reset既可回退版本,也可把暂存区的修改回退到工作区.HEAD表示最新版本)
+    再git checkout --file
+
+    若要撤销的修改已提交到版本库,但还未推送远程,可先回退版本
+    git reset --hard HEAD^	回退上个版本
+    git reset --hard HEAD^^	回退上上个版本
+    git reset --hard HEAD~100	回退上100个版本
+    git reset --hard 提交ID	回到提交ID(版本号)的版本
+    (提交ID/版本号没必要写全,前几位能唯一确定即可)
+
+    git revert 提交ID	版本回退,但为a-b-c-b式,而reset为a-b(-c擦除)式
+    (用于远程回退)
+
+    删除文件
+    如直接在工作区内删除文件,因工作区与版本库不一致,git status会告知删除了哪些文件
+    若确实要从版本库中删除该文件,用命令git rm删除,再git commit
+    若误删,因版本库有备件,可用git checkout --file恢复.
+
+将本机ssh公钥发送给github后,可使用github上的远程仓库
+ssh-keygen -t rsa -C "youremail@example.com"
+创建ssh key
+
+可将本机公钥发送给服务器,以后登录服务器可用ssh公钥登录,不用输入登录口令.
+
+在本地仓库使用命令git remote add origin git@server-name:path/repo-name.git关联一远程库,如
+    git remote add origin git@github.com:Hecame/git_pratice.git
+    关联github网Hecame帐号的git_pratice仓库
+
+关联远程库后,在本地仓库使用命令git push -u origin master第一次推送master分支的所有内容
+此后,每次本地提交后,可用命令git push origin master推送最新修改给远程库.
+
+从远程库克隆
+git clone git@github.com:Hecame/git_practice.git
+从远程库克隆到本地
+
+git@github.com:Hecame/库名.git	使用ssh地址,格式为git://
+https://github.com/Hecame/库名.git	使用https协议传输
+
+
+git checkout -b 分支名	创建分支并把HEAD指向新分支
+git branch 分支名	创建分支
+git checkout 分支名	把HEAD指向分支
+git branch		查看当前分支,所有分支
+新提交会创建在HEAD所指向的分支上
+git merge 分支1 	将分支1合并到当前分支
+(如当前分支与分支1存在冲突,合并命令将无法成功执行,需手动解决冲突后,再次提交,完成合并)
+git branch -d 分支1	删除分支1
+
+注:对所有分支而言,工作区和暂存区是公共的.
+git merge --no-ff -m "合并提交记录" 分支1
+--no-ff表示禁用Fast forward即禁用合并快进模式,这样合并后,git log里会留下分支1的信息,即当前分支合并分支1后有自己的提交记录,而不是共用分支1的提交记录.
+
+分支策略
+实际开发中,按以下几个基本原则进行分支管理:
+1.master分支应非常稳定,仅用来发布新版本,平时不能在上面干活
+2.dev分支是不稳定的,可在dev上干活.
+3.团队成员在dev分支上各建自己的分支,时不时往dev分支上合并
+团队合作分支模型类似:
+
+*---------------*------------*	.......	master
+ \             /            /
+  *------*----*------*-----*---*.......	dev
+  |\    /|   /      /     /   /
+  | *--*-|--*--*---/-----*   /	.......	Hecame
+  *------*---*----*---------*	.......	nan
+
+工作只做到一半,没法提交,但又需要做另外分支上的工作(如修复bug),可使用stash功能,将当前工作现场'储藏'起来,以后恢复现场后继续工作.
+git stash	储藏现场,将工作区设为干净
+git stash list	查看工作现场存储情况
+恢复stash内容有2方法:
+1.git stash apply恢复后stash内容不删除,用git stash drop删除
+2.git stash pop恢复的同时删除stash内容
+
+可多次stash,恢复时先用git stash list查看,再恢复指定stash,用命令git stash apply stash@{0?} 	?对应相应的stash内容
+
+
+开发一个新feature,最好新建一个分支
+若要丢弃一个没有被合并过后分支,用git branch -D 分支名   来删除
+
+
+查看远程库信息,用git remote
+git remote -v	查看更详细信息
+
+推送分支
+git push origin 分支名
+master是主分支,故要时刻与远程同步
+dev是开发分支,团队所有成员都需在其工作,也需要远程同步
+bug分支只用于在本地修复bug,没必要推到远程,除非有要求
+总之有合作开发的分支,则需推到远程
+
+多人协作时,假设远程库原没有dev分支,现各成员克隆库到本地皆无dev分支:
+成品A在本地建立dev分支,修改后本地提交,再远程推送,远程库新版本1有dev分支;
+成员B在本地建立dev分支,本地提交后无法远程推送,因为与A的推送有冲突
+解决办法:先用git pull把最新提交从origin/dev抓下来,再在本地合并,解决冲突,再推送
+首次git pull需指定本地dev分支与远程origin/dev分支的链接,设置如下
+git branch --set-upstream-to=origin/dev dev
+再git pull,git pull会将远程库中dev分支自动与本地dev分支合并,(若出现冲突,手动解决)再提交再push即可.
+
+git checkout -b branch-name origin/branch-name	在本地建和远程分支对应的分支,本地和远程分支名最好一致.
+
+git branch --set-upstream branch-name origin/branch-name	建立本地分支和远程分支的关联
+
+
+
+多人在同一分支上协作时,容易出现冲突,即便冲突,后push的成员也不得不先pull,在本地合并,才能push成功
+这使得git log不是一条干净的直线,提交历史很乱
+
+rebase操作
+git rebase	将本地未push的分叉提交历史整理成直线
+其做法为将上次同步远程库更改为最新远程库版本,将最新远程库版本做为本地自上次同步远程库后所做的修改本地提交的基础,因些git rebase后,原来的本地提交ID会改变,修改内容也有变化,但最后的提交内容是一样的.
+
+
+标签管理
+标签tag作用同提交ID一样,但更易解读查找
+在git中打标签,先切换到需打标签的分支,再git tag <name>即可为当前分支最新提交版本打上标签
+git tag		查看所有标签
+git tag <name> <提交ID>		为对应提交ID打标签
+
+标签不按时间顺序列出,而是按字母排序.
+git show <tagname>	查看相应标签信息
+
+还可创建带有说明的标签,-a指定标签名,-m指定说明文字:
+git tag -a <name> -m '标签说明' <提交ID>
+
+删除本地标签git tag -d <tagname>
+推送某个标签到远程git push origin <tagname>
+推送所有尚未推送到远程的本地标签git push origin --tags
+
+若标签已推送远程,要删除先删本地
+git tag -d <tagname>
+再远程删除
+git push origin :refs/tags/<tagname>
+
+
+使用github
+在github上可任意fork开源仓库
+自己拥有fork后的仓库的读写权限
+可以推送pull request给官方仓库
+
+码云(gitee.com),国内的git托管服务
+git remote add origin git@gitee.ocm:帐号名/仓库名.git
+
+本地库只能关联一个名叫origin的远程库要么删除原来的origin远程库,要么改远程库名
+git remote -v  查看远程库信息(后面带push表有权限推送)
+
+
+自定义git
+git config --global color.ui true
+适当地显示不同的颜色
+
+设置.gitignore原则
+1.忽略操作系统自动生成的文件,如缩略图等
+2.忽略编译生成的中间文件、可执行文件等,即若一文件是通过另一文件自动生成的,则此文件没必要放进版本库
+3.忽略自身带敏感信息的配置文件,如存放口令的配置文件
+
+
+git add -f app.pyw	-f可强制添加被.gitignore的文件
+git check-ignore -v 文件名	检查忽略文件中哪个规则限制了指定文件
+另.gitignore文件本身要放到 版本库里 ,且可对其做版本管理.
+
+
+配置别名
+git config --global alias.别名 原名
+将命令git 原名改为git 别名
+
+例
+git config --global alias.lg "log --color --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit"
+
+别名配置在git配置文件中,要删除别名,直接把git配置文件中[alias]后面对应行删掉即可.
+
+查看用户的配置信息:git config --global --list
+要查看当前仓库的配置信息,把global改成local即可.
+
+
+
